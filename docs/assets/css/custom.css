@@ -1,0 +1,21 @@
+body {
+  background-color: #111;
+  color: #40E0D0; /* turquoise text */
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* Dark transparent content box */
+.md-content {
+  background-color: rgba(0, 0, 0, 0.6);
+  padding: 2rem;
+  border-radius: 10px;
+}
+
+/* Full background image for homepage */
+.md-main__inner.md-grid {
+  background-image: url("../images/bg.jpg");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+

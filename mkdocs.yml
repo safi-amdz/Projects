@@ -1,0 +1,16 @@
+site_name: My Project Docs
+theme:
+  name: material
+  palette:
+    scheme: slate
+  font:
+    text: Roboto Mono
+    code: JetBrains Mono
+  features:
+    - navigation.instant
+    - navigation.tabs
+    - toc.integrate
+    - content.code.copy
+extra_css:
+  - assets/css/custom.css
+
