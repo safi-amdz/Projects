@@ -1,4 +1,5 @@
-site_name: My Project Docs
+site_name: AI-Driven Hybrid Cloud Documentation Hub
+site_description: Full-stack documentation of an enterprise-grade AI and cloud infrastructure simulation
 theme:
   name: material
   palette:
@@ -7,10 +8,47 @@ theme:
     text: Roboto Mono
     code: JetBrains Mono
   features:
-    - navigation.instant
-    - navigation.tabs
-    - toc.integrate
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - content.code.annotate
     - content.code.copy
+    - content.tabs.link
 extra_css:
   - assets/css/custom.css
+nav:
+  - Home: index.md
+  - System Architecture: system-architecture.md
 
+  - Project Phases:
+      - Baseline Infrastructure: phases/1-baseline-infra.md
+      - AI Service Deployment: phases/2-ai-services.md
+      - MLOps Automation: phases/3-mlops-automation.md
+      - Observability & Monitoring: phases/4-observability.md
+      - Troubleshooting Vault: phases/5-failures-troubleshooting.md
+
+  - Diagnostics:
+      - S3 Access Denied: diagnostics/s3-access-denied.md
+      - MLflow UI Not Loading: diagnostics/mlflow-ui-broken.md
+      - Terraform Lock Issue: diagnostics/terraform-lock.md
+      - OPNsense NAT Issue: diagnostics/opnsense-nat-issue.md
+
+  - Homelab Engineering:
+      - Proxmox: homelab/proxmox.md
+      - OPNsense: homelab/opnsense.md
+      - Nextcloud: homelab/nextcloud.md
+markdown_extensions:
+  - toc:
+      permalink: true
+  - admonition
+  - codehilite
+  - pymdownx.superfences
+  - pymdownx.tabbed
+  - pymdownx.details
+  - pymdownx.highlight
+  - pymdownx.inlinehilite
+  - pymdownx.emoji
+  - pymdownx.keys
+  - pymdownx.tasklist:
+      custom_checkbox: true
+                            

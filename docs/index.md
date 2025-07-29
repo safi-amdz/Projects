@@ -1,29 +1,64 @@
-# Hello World!
+# AI-Driven Hybrid Cloud Infrastructure · Documentation Hub
 
+This documentation hub presents a structured, end-to-end blueprint for architecting, deploying, and operationalizing a production-grade AI infrastructure platform. It emulates the design principles, integration patterns, and operational challenges commonly encountered in modern hybrid environments, including cloud-native, on-premises, and virtualized systems. Emphasis is placed on resilience, observability, automation, and fault remediation across the entire lifecycle.
 
-## Documentation
+---
 
-* MkDocs - Installation & Deploy to GitHub
+## 🧠 Project Vision
 
-## Cloud Projects
-* AWS (IAM, EC2, Lambda, S3, etc.)
-* Azure (App Services, Event Grid, CosmosDB)
-* GCP (In-progress)
+> Build a hybrid AI platform using production-grade practices — document every stage, challenge, and fix along the way.
 
-## AI Projects
-* MLOps Pipelines
-* RAG with LangChain
-* Qdrant, HuggingFace Transformers
+You’ll find:
+- Structured **phases** representing real-world milestones
+- Self-hosted services that simulate **internal infrastructure**
+- Diagnosed **failures** and their root causes
+- End-to-end **AI service pipelines** with CI/CD and observability
 
-## DevOps Projects
-* Docker + Kubernetes Setup
-* CI/CD with GitHub Actions
-* Terraform basics
+---
 
+## 🧭 Overview
 
-## Project layout
+| Phase | Focus                        | Tools & Topics |
+|-------|------------------------------|----------------|
+| **1** | Baseline Infrastructure      | AWS, Terraform, IAM, S3, CI |
+| **2** | AI Service Deployment        | LangChain, Qdrant, HuggingFace |
+| **3** | MLOps Automation             | MLflow, Prefect, GitHub Actions |
+| **4** | Observability & Monitoring   | Grafana, Loki, CloudWatch |
+| **5** | Troubleshooting & Resilience| Postmortems, mitigations |
 
-    mkdocs.yml    # The configuration file.
-    docs/
-        index.md  # The documentation homepage.
-        ...       # Other markdown pages, images and other files.
+---
+
+## 📦 This Format
+
+- Focuses on solving architectural and operational challenges  
+- Demonstrates engineering decision-making and tradeoff analysis  
+- Includes postmortems and mitigation strategies  
+- Integrates cloud infrastructure, AI systems, and DevOps practices into a unified workflow for maximum technical and business impact
+
+---
+
+## 🔗 Navigation
+
+- [📊 System Architecture Overview](system-architecture.md)
+- [📁 Phases 1–5](phases/1-baseline-infra.md)
+- [🧪 Diagnostics Vault](phases/5-failures-troubleshooting.md)
+- [🏠 Homelab Engineering](homelab/)
+
+---
+
+## 🧰 Full Stack Overview
+
+**Cloud Infra**: AWS, Azure, Terraform, VPC, IAM  
+**AI Tools**: LangChain, Qdrant, HuggingFace, Transformers  
+**MLOps**: MLflow, Prefect, CI/CD pipelines  
+**Observability**: Grafana, CloudWatch, Loki  
+**Self-hosted**: Proxmox, OPNsense, Nextcloud
+
+---
+
+## 🚀 Ideal For
+
+- Cloud Architect roles
+- MLOps Engineers
+- Infrastructure-as-Code Specialists
+- AI Platform Engineers
