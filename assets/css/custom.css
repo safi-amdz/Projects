@@ -1,6 +1,6 @@
 body {
   background-color: #111;
-  color: #40E0D0; /* turquoise text */
+  color: #F5F5F5; 
   font-family: 'JetBrains Mono', monospace;
 }
 
@@ -17,5 +17,18 @@ body {
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
+}
+
+/* Make content span full width of the screen */
+.md-grid {
+  max-width: 100% !important;
+  width: 100% !important;
+  padding: 0 !important;
+  margin: 0 auto !important;
+}
+
+/* Ensure full height for background image and page layout */
+html, body, .md-main, .md-main__inner {
+  height: 100% !important;
 }
 
