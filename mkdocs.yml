@@ -18,25 +18,24 @@ extra_css:
   - assets/css/custom.css
 nav:
   - Home: index.md
-  - System Architecture: system-architecture.md
+  - Phases:
+      - Phase 1:
+          On-Premise Infrastructure Setup: phases/1-onprem-bootstrap.md
+      - Phase 2:
+          Network Design and Security: phases/2-network-security.md
+      - Phase 3:
+          Cloud Foundations: phases/3-cloud-foundations.md
+      - Phase 4:
+          Cloud Migrations: phases/4-cloud-migrations.md
+      - Phase 5:
+          AI and Automation: phases/5-ai-automation.md
+      - Phase 6:
+          Monitoring and Observability: phases/6-observability.md
+      - Phase 7:
+          Reliability and Failure Simulation: phases/7-resilience-testing.md
+  - Troubleshooting Vault: diagnostics/index.md
+  - Homelab Engineering: homelab/index.md
 
-  - Project Phases:
-      - Baseline Infrastructure: phases/1-baseline-infra.md
-      - AI Service Deployment: phases/2-ai-services.md
-      - MLOps Automation: phases/3-mlops-automation.md
-      - Observability & Monitoring: phases/4-observability.md
-      - Troubleshooting Vault: phases/5-failures-troubleshooting.md
-
-  - Diagnostics:
-      - S3 Access Denied: diagnostics/s3-access-denied.md
-      - MLflow UI Not Loading: diagnostics/mlflow-ui-broken.md
-      - Terraform Lock Issue: diagnostics/terraform-lock.md
-      - OPNsense NAT Issue: diagnostics/opnsense-nat-issue.md
-
-  - Homelab Engineering:
-      - Proxmox: homelab/proxmox.md
-      - OPNsense: homelab/opnsense.md
-      - Nextcloud: homelab/nextcloud.md
 markdown_extensions:
   - toc:
       permalink: true
