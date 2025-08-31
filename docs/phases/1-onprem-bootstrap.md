@@ -1,21 +1,21 @@
-# Phase 1  Offline-first Network Build with MikroTik CRS328 SwOS, OPNsense 25.7, UniFi AP, Raspberry Pi control plane, and NAS 
+# Offline Network and Security Build with MikroTik CRS328 SwOS, OPNsense 25.7, UniFi AP, Raspberry Pi control plane, and NAS 
 
 
 ## Objective and build order
-You will build the network completely offline first, then cut over to the Internet in Phase 2. The sequence avoids lockouts and makes every change testable.
+We will build the network completely offline first, then cut over to the Internet in Phase 2. The sequence is designed to avoids lockouts and every change testable.
 
 1. Prepare the switch while it is at factory defaults.
 2. Put OPNsense behind the switch with a temporary LAN address that does not collide with the switch default.
 3. Plan and create VLANs on the switch with clear reasons for tagged and untagged choices.
 4. Create VLAN interfaces on OPNsense and move management to VLAN 10 safely.
-5. Bring the Raspberry Pi control plane online on VLAN 10 and run Pi hole, Step CA, and FreeRADIUS in containers.
+5. Bring the Raspberry Pi control plane online on VLAN 10 and run Pi-hole, Step CA, and FreeRADIUS in containers.
 6. Create the Storage VLAN 50 for the NAS on SFP+3.
 7. Configure DHCP and firewall policy per VLAN.
 8. Validate offline. No Internet is required to finish Phase 1.
 
 ## Hardware and names
 1. Firewall Protectli VP6670 running OPNsense 25.7
-2. Switch MikroTik CRS328 24P 4S plus RM running SwOS layer 2 only
+2. Switch MikroTik CRS328-24P-4S+RM running SwOS layer 2 only
 3. Access Point UniFi Enterprise AP with PoE
 4. Server Dell PowerEdge R720 for Proxmox used in Phase 2
 5. Control plane Raspberry Pi 4B 8 GB with 256 GB SSD
@@ -24,6 +24,9 @@ You will build the network completely offline first, then cut over to the Intern
 8. Local domain home.arpa
 
 ## Final VLAN plan and addressing
+
+_This is the general (Highest level) summary. See **Part 2. VLAN‑to‑OPNsense Interface Mapping** for per‑interface details._
+
 This is the end state you will reach by the end of Phase 1.
 
 | Name                 | VLAN | IPv4 subnet     | Gateway      | DHCP            | Notes                                      |
@@ -39,7 +42,7 @@ This is the end state you will reach by the end of Phase 1.
 | Quarantine           | 90   | 10.10.90.0/24   | 10.10.90.1   | Yes             | parking VLAN                               |
 | Blackhole Native     | 999  | none            | none         | none            | used only as native on trunks              |
 
-Reserved addresses
+### Reserved addresses
 | IP          | Hostname              | Purpose                                         |
 |-------------|-----------------------|-------------------------------------------------|
 | 10.10.10.1  | gw.home.arpa          | OPNsense Management interface on VLAN 10        |
@@ -52,7 +55,7 @@ Reserved addresses
 | 10.10.50.10 | nas01.home.arpa       | NAS on Storage VLAN 50                          |
 | 10.10.70.10 | proxy01.home.arpa     | Reverse proxy VM Phase 2                        |
 
-Service names
+### Service names
 1. step.home.arpa is a CNAME to ctlpln01.home.arpa
 2. radius.home.arpa is a CNAME to ctlpln01.home.arpa
 
@@ -65,12 +68,12 @@ Use this table when you are plugging devices.
 | SFP+2   | Dell R720 Proxmox  | Trunk  | 999  | 10,20,30,40,50,60,70,80,90,999                |
 | SFP+3   | NAS                | Access | 50   | 50                                            |
 | SFP+4   | Spare              | Trunk  | 999  | 10,20,30,40,50,60,70,80,90,999                |
-| 1 to 4       | Cameras            | Access | 40   | 40                                            |
+| 1–4       | Cameras            | Access | 40   | 40                                            |
 | 5            | Raspberry Pi       | Access | 10   | 10                                            |
 | 6            | UniFi AP           | Access then Trunk | 10 then 999 | 10 first. Later 10,20,40,60,999 |
 | 7            | iDRAC              | Access | 10   | 10                                            |
-| 8 to 12      | Home clients       | Access | 20   | 20                                            |
-| 13 to 14     | Dev wired          | Access | 30   | 30                                            |
+| 8–12      | Home clients       | Access | 20   | 20                                            |
+| 13–14     | Dev wired          | Access | 30   | 30                                            |
 | 23           | Quarantine jack    | Access | 90   | 90                                            |
 | 24           | Admin laptop       | Access | 10   | 10                                            |
 
@@ -83,10 +86,10 @@ Important notes
 ---
 
 ## Stage 0  Offline bootstrap approach
-Why the temporary 192.168.88.0 slash 24 network
+Why the temporary 192.168.88.0/24 network
 1. SwOS ships at 192.168.88.1 with no VLANs. You need to reach it first.
 2. Give OPNsense LAN a temporary IP of 192.168.88.2 so laptop and switch and firewall all talk before you create VLANs.
-3. After VLAN 10 exists and works you will move management to 10.10.10.0 slash 24 and remove the temporary network.
+3. After VLAN 10 exists and works you will move management to 10.10.10.0/24 and remove the temporary network.
 
 What tagged and untagged mean in SwOS
 1. Tagged frames carry a VLAN ID inside the Ethernet header. Trunks use tags to carry many VLANs over one link.
@@ -97,7 +100,7 @@ What tagged and untagged mean in SwOS
 
 ---
 
-## A) Physical cabling for the offline lab
+## Section A – Physical cabling for the offline lab
 1. Connect Protectli SFP+1 to CRS328 SFP+1. This is internal trunk later.
 2. Connect the admin laptop to copper port 24 on the CRS328.
 3. Keep the ONT and Internet disconnected. Leave the WAN port on the Protectli empty.
@@ -107,7 +110,7 @@ What tagged and untagged mean in SwOS
 
 ---
 
-## B) Reach SwOS at its factory IP and harden basics
+## Section B – Reach SwOS at its factory IP and harden basics
 Laptop temporary IP
 1. On your laptop set a manual IPv4 of 192.168.88.10 with mask 255.255.255.0 and gateway empty.
 
@@ -119,13 +122,13 @@ Log in and change core settings
 
 ---
 
-## C) Give OPNsense a temporary LAN IP so you can reach its GUI
+## Section C – Give OPNsense a temporary LAN IP so you can reach its GUI
 Use the console on the Protectli
 1. Connect a keyboard and HDMI or serial cable to the Protectli.
 2. Boot OPNsense and wait for the text menu.
 3. Choose Assign Interfaces if needed and make sure your internal NIC is LAN.
 4. Choose Set interface IP address then select LAN.
-5. Set IPv4 to 10.10.10.4 slash 24. No upstream gateway on LAN. Skip IPv6 for now.
+5. Set IPv4 to 10.10.10.4/24. No upstream gateway on LAN. Skip IPv6 for now.
 
 Log in to the OPNsense GUI
 1. On the laptop open https://10.10.10.4 and accept the certificate warning.
@@ -134,7 +137,7 @@ Log in to the OPNsense GUI
 
 ---
 
-## D) Plan VLANs and mark ports before you configure
+## Section D – Plan VLANs and mark ports before you configure
 Decide the roles now so you do not guess later.
 1. SFP+1 to Protectli will become a trunk. Carries VLANs 10, 20, 30, 40, 50, 60, 70, 80, 90. Native PVID set to 999.
 2. SFP+2 to Proxmox will be a trunk. Same membership and PVID 999.
@@ -143,9 +146,9 @@ Decide the roles now so you do not guess later.
 5. Port 24 admin laptop will be access in VLAN 10 while you are building.
 6. Port 5 Raspberry Pi will be access in VLAN 10.
 7. Port 6 UniFi AP will be access in VLAN 10 for adoption. After adoption you will convert it to a trunk that carries VLANs 10, 20, 40 and 60.
-8. Ports 1 to 4 cameras will be access in VLAN 40.
-9. Ports 8 to 12 Home wired access in VLAN 20.
-10. Ports 13 to 14 Dev wired access in VLAN 30.
+8. Ports 1–4 cameras will be access in VLAN 40.
+9. Ports 8–12 Home wired access in VLAN 20.
+10. Ports 13–14 Dev wired access in VLAN 30.
 11. Port 23 Quarantine access in VLAN 90.
 
 Why PVID 999 on trunks
@@ -153,7 +156,7 @@ Why PVID 999 on trunks
 
 ---
 
-## E) Create VLANs in SwOS and apply per port behavior
+## Section E – Create VLANs in SwOS and apply per port behavior
 
 VLANs tab
 1. Add VLAN IDs 10, 20, 30, 40, 50, 60, 70, 80, 90, 999. Name them Mgmt, Home, Dev, IoT, Storage, Guest, DMZ, VPN, Quarantine, Blackhole.
@@ -178,12 +181,12 @@ Set VLAN Mode strict for every port.
 2. SFP+2 to Proxmox. VLAN Receive only tagged. Default VLAN ID 999. Force VLAN ID unchecked. Save.
 3. SFP+3 to NAS. VLAN Receive only untagged. Default VLAN ID 50. Force VLAN ID checked. Save.
 4. SFP+4 spare trunk. VLAN Receive only tagged. Default VLAN ID 999. Force VLAN ID unchecked. Save.
-5. Ports 1 to 4 cameras. VLAN Receive only untagged. Default VLAN ID 40. Force VLAN ID checked. Save.
+5. Ports 1–4 cameras. VLAN Receive only untagged. Default VLAN ID 40. Force VLAN ID checked. Save.
 6. Port 5 Raspberry Pi. VLAN Receive only untagged. Default VLAN ID 10. Force VLAN ID checked. Save.
 7. Port 6 UniFi AP during adoption. VLAN Receive only untagged. Default VLAN ID 10. Force VLAN ID checked. Save.
 8. Port 7 iDRAC. VLAN Receive only untagged. Default VLAN ID 10. Force VLAN ID checked. Save.
-9. Ports 8 to 12 Home. VLAN Receive only untagged. Default VLAN ID 20. Force VLAN ID checked. Save.
-10. Ports 13 to 14 Dev. VLAN Receive only untagged. Default VLAN ID 30. Force VLAN ID checked. Save.
+9. Ports 8–12 Home. VLAN Receive only untagged. Default VLAN ID 20. Force VLAN ID checked. Save.
+10. Ports 13–14 Dev. VLAN Receive only untagged. Default VLAN ID 30. Force VLAN ID checked. Save.
 11. Port 23 Quarantine. VLAN Receive only untagged. Default VLAN ID 90. Force VLAN ID checked. Save.
 12. Port 24 Admin laptop. VLAN Receive only untagged. Default VLAN ID 10. Force VLAN ID checked. Save.
 
@@ -191,11 +194,14 @@ Set VLAN Mode strict for every port.
 
 ---
 
-# SwOS + OPNsense VLAN10 Cutover (Now, these are Proven Working Steps)
+# SwOS + OPNsense VLAN10 Cutover 
 
-> Scope: CRS328-24P-4S+RM running SwOS and OPNsense 25.7.  
-> Goal: Management on VLAN10 only. Switch at 10.10.10.2. OPNsense at 10.10.10.1.  
-> Important: **Do not change Port Isolation** from its current default on the switch. Leave it as is.
+!!! info
+    **Scope:** CRS328–24P-4S+RM running SwOS and OPNsense 25.7.  
+!!! tip
+    **Goal:** Management on VLAN10 only. Switch at 10.10.10.2. OPNsense at 10.10.10.1.  
+!!! warning
+    **Important:** **Do not change Port Isolation** from its current default on the switch. Leave it as is.
 
 ## Step 1. Basic Access (confirm current state)
 1. Connect your laptop to a copper port on the switch.
@@ -219,7 +225,7 @@ Add the following VLAN IDs:
 - 90 Quarantine  
 - 999 Blackhole
 
-Keep “Learning” enabled. If you use Chromecast or AirPlay, enable IGMP Snooping for VLAN 20 and 40.
+Keep “Learning” enabled. If using services i.e. Chromecast or AirPlay, enable IGMP Snooping for VLAN 20 and 40.
 
 ## Step 3. VLAN Memberships (SwOS → VLANs tab)
 Tick ports as members exactly:
@@ -237,7 +243,8 @@ Tick ports as members exactly:
 
 Click **Save**.
 
-> Note on Port Isolation: **Do not change** the Port Isolation defaults in this tab or in the Port Isolation tab. Leave them as is, per your working setup.
+!!! note
+    **Port Isolation:** Do not change the Port Isolation defaults in this tab or in the Port Isolation tab. Leave them as is, per your working setup. **Do not change** the Port Isolation defaults in this tab or in the Port Isolation tab. Leave them as is, per your working setup.
 
 ## Step 4. Per-Port Behavior (SwOS → VLAN tab)
 Configure each port:
@@ -268,7 +275,7 @@ Configure each port:
   - Default VLAN ID (PVID) = **50**  
   - Force VLAN ID = **checked**
 
-- **Ports 1–4 (POE Security Cameras)**  
+- **Ports 1–4 (PoE Security Cameras)**  
   - VLAN Mode = **strict**  
   - VLAN Receive = **only untagged**  
   - Default VLAN ID (PVID) = **40**  
@@ -342,9 +349,9 @@ Click **Save**.
 
 ---
 
-## Notes and rationale
+## Notes
 - Leaving **Port Isolation** at current default was necessary in this environment, since they're isolated anyway. Do not change it now that everything is stable.  
-- Retiring the **LAN IPv4** was essential because having `10.10.10.4` (LAN) and `10.10.10.1` (VLAN10) in the same /24 causes ARP and routing ambiguity. Removing LAN’s IP resolved this.  
+- Retiring the **LAN IPv4** was essential because having `10.10.10.4` (LAN) and `10.10.10.1` (VLAN10) in the same/24 causes ARP and routing ambiguity. Removing LAN’s IP resolved this.  
 - **VLAN999** is your native “blackhole” VLAN for trunks; it is not the trunk itself. We set PVID 999 on trunks to safely dispose of stray untagged frames.  
 - Convert the AP port to a trunk later (Phase 2) after the controller is up and SSIDs are mapped to their VLANs.
 
@@ -353,8 +360,9 @@ Click **Save**.
 
 # OPNsense Bootstrap, VLAN Mapping, 802.1Q, and Security Audit
 
-> Target hardware: Protectli VP6670 (OPNsense 25.7) + MikroTik CRS328-24P-4S+RM (L2)  
-> Goal: Clean, least‑privilege segmentation with standards‑based 802.1Q tagging and defense‑in‑depth.
+> Target hardware: Protectli VP6670 (OPNsense 25.7) + MikroTik CRS328–24P-4S+RM (L2)  
+!!! tip
+    **Goal:** Clean, least‑privilege segmentation with standards‑based 802.1Q tagging and defense‑in‑depth.
 
 ---
 
@@ -393,6 +401,8 @@ Click **Save**.
 
 ## Part 2. VLAN‑to‑OPNsense Interface Mapping
 
+_This section provides detailed, per‑VLAN interface assignments. It complements and intentionally overlaps with the previous general table._
+
 | VLAN ID | Name        | OPNsense Interface   | Subnet            | DHCP Pool               | Purpose / Devices                                                                     | Notes                                                                                                 |
 |--------:|-------------|----------------------|-------------------|-------------------------|---------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------|
 | 10      | Management  | VLAN10 (`ixl0.10`)   | 10.10.10.1/24     | 10.10.10.200–210        | Switch mgmt (10.10.10.2), OPNsense GUI, Pi, UniFi Controller VM, iDRAC               | Primary mgmt only. Allow HTTPS/DNS/SSH to mgmt tools. **Block Internet** except updates.              |
@@ -413,77 +423,77 @@ Click **Save**.
 > Create these under **Firewall → Rules → [interface]** in OPNsense. Log denies where noted.
 
 ### VLAN10 (Management)
-- **Allow** `VLAN10 net → 10.10.10.30` **TCP/UDP 53 (DNS)** *(Pi-hole).*
-- **Block** `VLAN10 net → any` **TCP/UDP 53** *(block external DNS; keep above the Internet-allow rule).*
-- **Allow** `VLAN10 net → This Firewall` TCP 443 (GUI).  
-- **Allow** `VLAN10 net → This Firewall` TCP 22 (SSH, if enabled).  
-- **Allow** `VLAN10 net → *` DNS, NTP, ICMP.  
-- **Allow** `VLAN10 net → Internet` (firmware/OS updates only; optionally use an alias).  
-- **Block** `VLAN10 net →` all other internal VLANs (except DNS resolver if off‑box).  
+- `Allow` `VLAN10 net → 10.10.10.30` **TCP/UDP 53 (DNS)** *(Pi-hole).*
+- `Block` `VLAN10 net → any` **TCP/UDP 53** *(block external DNS; keep above the Internet-allow rule).*
+- `Allow` `VLAN10 net → This Firewall` TCP 443 (GUI).  
+- `Allow` `VLAN10 net → This Firewall` TCP 22 (SSH, if enabled).  
+- `Allow` `VLAN10 net → *` DNS, NTP, ICMP.  
+- `Allow` `VLAN10 net → Internet` (firmware/OS updates only; optionally use an alias).  
+- `Block` `VLAN10 net →` all other internal VLANs (except DNS resolver if off‑box).  
 - **Log all denies**.
 
 ### VLAN20 (Home)
-- **Allow** `VLAN20 net → 10.10.10.30` **TCP/UDP 53 (DNS)** *(Pi-hole).*
-- **Block** `VLAN20 net → any` **TCP/UDP 53** *(block external DNS; keep above the Internet-allow rule).*
-- **Allow** `VLAN20 net → Internet (any)`  
-- **Allow** `VLAN20 net → VLAN20 net` (intra‑LAN as needed)  
-- **Block** `VLAN20 net → VLAN10 (Mgmt)`  
-- **Block** `VLAN20 net → VLAN30, VLAN40, VLAN50` (permit specific NAS/printer access if desired)  
+- `Allow` `VLAN20 net → 10.10.10.30` **TCP/UDP 53 (DNS)** *(Pi-hole).*
+- `Block` `VLAN20 net → any` **TCP/UDP 53** *(block external DNS; keep above the Internet-allow rule).*
+- `Allow` `VLAN20 net → Internet (any)`  
+- `Allow` `VLAN20 net → VLAN20 net` (intra‑LAN as needed)  
+- `Block` `VLAN20 net → VLAN10 (Mgmt)`  
+- `Block` `VLAN20 net → VLAN30, VLAN40, VLAN50` (permit specific NAS/printer access if desired)  
 - DNS via Pi‑hole or OPNsense.
 
 ### VLAN30 (Dev)
-- **Allow** `VLAN30 net → 10.10.10.30` **TCP/UDP 53 (DNS)** *(Pi-hole).*
-- **Block** `VLAN30 net → any` **TCP/UDP 53** *(block external DNS; keep above the Internet-allow rule).*
-- **Allow** `VLAN30 net → Internet`  
-- **Allow** `VLAN30 net → VLAN50 (Storage)`  
-- **Block** `VLAN30 net → VLAN10 (Mgmt)`  
-- **Block** `VLAN30 net → VLAN20 (Home)`  
+- `Allow` `VLAN30 net → 10.10.10.30` **TCP/UDP 53 (DNS)** *(Pi-hole).*
+- `Block` `VLAN30 net → any` **TCP/UDP 53** *(block external DNS; keep above the Internet-allow rule).*
+- `Allow` `VLAN30 net → Internet`  
+- `Allow` `VLAN30 net → VLAN50 (Storage)`  
+- `Block` `VLAN30 net → VLAN10 (Mgmt)`  
+- `Block` `VLAN30 net → VLAN20 (Home)`  
 - Optional: **allow** SSH/RDP into Servers/DMZ for testing (tight scope + auth).
 
 ### VLAN40 (IoT / Cameras)
-- **Allow** `VLAN40 net → 10.10.10.30` **TCP/UDP 53 (DNS)** *(Pi-hole).*
-- **Block** `VLAN40 net → any` **TCP/UDP 53** *(block external DNS; keep above the Internet-allow rule).*
-- **Allow** `VLAN40 net → Internet` (app/cloud)  
-- **Allow** `VLAN40 net → VLAN50` (NVR/NAS target only)  
-- **Block** `VLAN40 net → VLAN10, VLAN20, VLAN30`  
-- **Block** `VLAN40 net → VLAN40 net` (isolate IoT devices from each other, if desired)  
+- `Allow` `VLAN40 net → 10.10.10.30` **TCP/UDP 53 (DNS)** *(Pi-hole).*
+- `Block` `VLAN40 net → any` **TCP/UDP 53** *(block external DNS; keep above the Internet-allow rule).*
+- `Allow` `VLAN40 net → Internet` (app/cloud)  
+- `Allow` `VLAN40 net → VLAN50` (NVR/NAS target only)  
+- `Block` `VLAN40 net → VLAN10, VLAN20, VLAN30`  
+- `Block` `VLAN40 net → VLAN40 net` (isolate IoT devices from each other, if desired)  
 - Only **DNS, NTP, HTTPS** outbound otherwise.
 
 ### VLAN50 (Storage)
-- **Allow** `VLAN50 net → Internet` (updates)  
-- **Allow** from `VLAN30 (Dev)` (file access)  
-- **Allow** from `VLAN20 (Home)` if media access desired  
-- **Block** `VLAN50 net → VLAN10 (Mgmt)`  
-- **Block** `VLAN50 net → VLAN40 (IoT)`  
+- `Allow` `VLAN50 net → Internet` (updates)  
+- `Allow` from `VLAN30 (Dev)` (file access)  
+- `Allow` from `VLAN20 (Home)` if media access desired  
+- `Block` `VLAN50 net → VLAN10 (Mgmt)`  
+- `Block` `VLAN50 net → VLAN40 (IoT)`  
 - Default **block** all else.
 
 ### VLAN60 (Guest)
-- **Allow** `VLAN60 net → 10.10.10.30` **TCP/UDP 53 (DNS)** *(Pi-hole).*
-- **Block** `VLAN60 net → any` **TCP/UDP 53** *(block external DNS; keep above the Internet-allow rule).*
-- **Allow** `VLAN60 net → Internet`  
-- **Block** `VLAN60 net →` all RFC1918 (10/8, 172.16/12, 192.168/16)  
-- **Block** `VLAN60 net → VLAN10,20,30,40,50,70,80,90`  
-- **Allow** DNS only to OPNsense/Pi‑hole.
+- `Allow` `VLAN60 net → 10.10.10.30` **TCP/UDP 53 (DNS)** *(Pi-hole).*
+- `Block` `VLAN60 net → any` **TCP/UDP 53** *(block external DNS; keep above the Internet-allow rule).*
+- `Allow` `VLAN60 net → Internet`  
+- `Block` `VLAN60 net →` all RFC1918 (10/8, 172.16/12, 192.168/16)  
+- `Block` `VLAN60 net → VLAN10,20,30,40,50,70,80,90`  
+- `Allow` DNS only to OPNsense/Pi‑hole.
 
 ### VLAN70 (DMZ)
-- **Allow** `VLAN70 net → Internet`  
-- **Allow** inbound **NAT**: `Internet → VLAN70` **specific** services only (e.g., 443 to reverse proxy)  
-- **Block** `VLAN70 net → LANs (Mgmt, Home, Dev, IoT, etc.)`  
-- **Allow** `VLAN70 net → VLAN50` only if reverse proxy must fetch content from NAS  
+- `Allow` `VLAN70 net → Internet`  
+- `Allow` inbound **NAT**: `Internet → VLAN70` **specific** services only (e.g., 443 to reverse proxy)  
+- `Block` `VLAN70 net → LANs (Mgmt, Home, Dev, IoT, etc.)`  
+- `Allow` `VLAN70 net → VLAN50` only if reverse proxy must fetch content from NAS  
 - **Log all denies**.
 
 ### VLAN80 (VPN)
-- **Allow** `VPN clients → VLAN10 (Mgmt)` only if remote admin required (strong auth + MFA).  
-- **Allow** `VPN clients → VLAN20, VLAN30, VLAN50` per access policy.  
-- **Block** `VPN clients → VLAN40 (IoT), VLAN60 (Guest)`  
-- **Allow** `VPN clients → Internet`  
+- `Allow` `VPN clients → VLAN10 (Mgmt)` only if remote admin required (strong auth + MFA).  
+- `Allow` `VPN clients → VLAN20, VLAN30, VLAN50` per access policy.  
+- `Block` `VPN clients → VLAN40 (IoT), VLAN60 (Guest)`  
+- `Allow` `VPN clients → Internet`  
 - Enforce **MFA** on VPN service.
 
 ### VLAN90 (Quarantine)
-- **Allow** `VLAN90 net → 10.10.10.30` **TCP/UDP 53 (DNS)** *(Pi-hole).*
-- **Block** `VLAN90 net → any` **TCP/UDP 53** *(block external DNS; keep above the Internet-allow rule).*
-- **Allow** `VLAN90 net → Internet` **only DNS, HTTP/HTTPS, Windows Update**  
-- **Block** `VLAN90 net → all other VLANs`  
+- `Allow` `VLAN90 net → 10.10.10.30` **TCP/UDP 53 (DNS)** *(Pi-hole).*
+- `Block` `VLAN90 net → any` **TCP/UDP 53** *(block external DNS; keep above the Internet-allow rule).*
+- `Allow` `VLAN90 net → Internet` **only DNS, HTTP/HTTPS, Windows Update**  
+- `Block` `VLAN90 net → all other VLANs`  
 - **Log all denies**.
 
 ### VLAN999 (Blackhole)
@@ -542,9 +552,9 @@ Click **Save**.
 
 ---
 
-## Part 7. Configuration Security Audit & Hardening Actions
+## Part 7. Security Configs Audit & Hardening Actions
 
-### Summary verdict
+### Summary 
 - **Segmentation:** Sound. Traffic constrained by per‑VLAN rules and explicit inter‑VLAN allowances.  
 - **Choke points:** Single OPNsense trunk is clear and auditable.  
 - **Residual risk:** Mis‑tagged/native VLANs, overly broad egress, weak VPN auth, IoT lateral movement, logging gaps.
@@ -566,7 +576,7 @@ Click **Save**.
 9. **Time sync:** Lock NTP to OPNsense; block outbound NTP except from OPNsense and designated servers.  
 10. **Firmware & backups:** Auto‑backup OPNsense; keep Protectli BIOS/firmware current; snapshot configuration before major changes.
 
-### Will wrap it up with these hardenings as well
+### Will wrap up with these hardenings as well
 - **DNS over TLS** or **DoH** on resolver/forwarder; pin upstreams via aliases.  
 - **802.1X/EAP‑TLS** on wired switch ports where feasible (Mgmt/Servers) with a RADIUS VM.  
 - **mTLS** inside the LAN for critical services (proxy ↔ backend).  
@@ -574,7 +584,8 @@ Click **Save**.
 
 # IPv4-Only Lockdown Checklist (Will be implementing IPv6 dual stack of ULA and GUA Later)
 
-> Goal: ensure all VLANs and WAN run **IPv4 only**, no IPv6 addresses are advertised or routed. Prevents clients from bypassing IPv4 firewall rules via auto-IPv6.
+!!! tip
+    **Goal:** ensure all VLANs and WAN run **IPv4 only**, no IPv6 addresses are advertised or routed. Prevents clients from bypassing IPv4 firewall rules via auto-IPv6.
 
 ---
 
@@ -642,7 +653,7 @@ On a test client (Windows/macOS/Linux):
 
 ---
 
-✅ With these steps in place:
+With these steps in place:
 - No IPv6 config exists in OPNsense.  
 - No RA/DHCPv6 runs, so clients can’t get routable IPv6 addresses.  
 - Firewall explicitly drops stray IPv6.  
@@ -651,7 +662,7 @@ On a test client (Windows/macOS/Linux):
 You can safely leave IPv6 untouched until you’re ready in Phase 7.
 ---
 
-## ✅ Outcome
+## Outcome
 
 With this structure:
 
@@ -663,21 +674,21 @@ With this structure:
 
 ---
 
-## X) Bring up the Raspberry Pi control plane on VLAN 10
+## Section X – Bring up the Raspberry Pi control plane on VLAN 10
 1. Plug the Pi Ethernet into port 5 which is access VLAN 10.
-2. Give the Pi static IPv4 10.10.10.30 slash 24 with gateway 10.10.10.1.
-3. If using optional local IPv6 give the Pi fd10:10:10:10::30 slash 64.
-4. Verify Pi hole admin at http://10.10.10.30/admin opens from a VLAN 10 host.
-5. Keep Conditional Forwarding disabled in Pi hole.
+2. Give the Pi static IPv4 10.10.10.30/24 with gateway 10.10.10.1.
+3. If using optional local IPv6 give the Pi fd10:10:10:10::30/64.
+4. Verify Pi-hole admin at http://10.10.10.30/admin opens from a VLAN 10 host.
+5. Keep Conditional Forwarding disabled in Pi-hole.
 
 Secure the firewall on ctlpln01 with UFW
 1. Ensure UFW default deny incoming and default allow outgoing.
-2. Allow SSH only from 10.10.10.0 slash 24 to port 22 TCP.
-3. Allow Pi hole admin only from 10.10.10.0 slash 24 to port 80 TCP.
-4. Allow Step CA only from 10.10.10.0 slash 24 to port 443 TCP.
+2. Allow SSH only from 10.10.10.0/24 to port 22 TCP.
+3. Allow Pi-hole admin only from 10.10.10.0/24 to port 80 TCP.
+4. Allow Step CA only from 10.10.10.0/24 to port 443 TCP.
 5. Allow RADIUS from 10.10.10.21 and 10.10.10.1 to ports 1812 and 1813 UDP.
 6. Allow DNS from client VLANs to port 53 TCP and UDP with the following commands.
-```
+```bash
 sudo ufw allow from 10.10.20.0/24 to any port 53 proto tcp
 sudo ufw allow from 10.10.20.0/24 to any port 53 proto udp
 sudo ufw allow from 10.10.30.0/24 to any port 53 proto tcp
@@ -689,14 +700,15 @@ sudo ufw allow from 10.10.60.0/24 to any port 53 proto udp
 sudo ufw allow from 10.10.90.0/24 to any port 53 proto tcp
 sudo ufw allow from 10.10.90.0/24 to any port 53 proto udp
 ```
+
 8. If you add new client VLANs later, repeat matching **ufw allow … port 53** TCP and UDP rules for each new subnet.
 
 7. Enable UFW and verify status.
 
-Point DHCP to Pi hole and block DNS bypass
-1. Services then DHCPv4 then each client VLAN. Set DNS servers to 10.10.10.30. Save.
-2. System then Settings then General. Set firewall DNS to 10.10.10.30. Confirm WAN override is unchecked.
-3. Firewall then Rules then each client VLAN. Create rules in this order.
+Point DHCP to Pi-hole and block DNS bypass
+1. Services → DHCPv4 then each client VLAN. Set DNS servers to 10.10.10.30. Save.
+2. System → Settings then General. Set firewall DNS to 10.10.10.30. Confirm WAN override is unchecked.
+3. Firewall → Rules then each client VLAN. Create rules in this order.
    1. Pass to 10.10.10.30 TCP 53.
    2. Pass to 10.10.10.30 UDP 53.
    3. Block to This Firewall TCP 53 with Log.
@@ -704,25 +716,25 @@ Point DHCP to Pi hole and block DNS bypass
    5. Leave default block below or add a general allow for intra VLAN testing as needed.
 
 Unbound binding on OPNsense
-1. Services then Unbound DNS then General.
+1. Services → Unbound DNS then General.
 2. Network Interfaces set only Localhost and VLAN10.
 3. Save and Apply.
 
 ---
 
-## Y) Storage VLAN 50 for NAS
+## Section Y – Storage VLAN 50 for NAS
 Why a storage VLAN
 1. Isolates SMB, NFS and iSCSI from user and IoT traffic.
 2. Lets you write precise firewall rules for storage flows.
 3. Keeps broadcast and discovery noise away from the NAS.
 
 OPNsense interface and rules
-1. Interfaces then Other Types then VLAN. Add tag 50 if not already present.
-2. Interfaces then Assignments. Add VLAN50. Enable it.
-3. Description VLAN50 Storage. IPv4 Static 10.10.50.1 slash 24. Save and Apply.
+1. Interfaces → Other Types then VLAN. Add tag 50 if not already present.
+2. Interfaces → Assignments. Add VLAN50. Enable it.
+3. Description VLAN50 Storage. IPv4 Static 10.10.50.1/24. Save and Apply.
 4. Do not enable DHCP on VLAN 50.
-5. Firewall then Aliases. Add host alias nas01 10.10.50.10.
-6. Firewall then Rules then VLAN50.
+5. Firewall → Aliases. Add host alias nas01 10.10.50.10.
+6. Firewall → Rules then VLAN50.
    1. Pass from VLAN10 net to VLAN50 net TCP 443 and TCP 22 for NAS management as needed.
    2. Pass from VLAN20 net to nas01 TCP 445 for SMB.
    3. Pass from VLAN30 net to nas01 TCP 2049 and TCP 111 for NFS.
@@ -730,7 +742,7 @@ OPNsense interface and rules
 
 NAS side
 1. Plug the NAS into SFP+3.
-2. Set NAS IP to 10.10.50.10 slash 24. Gateway 10.10.50.1. DNS 10.10.10.30.
+2. Set NAS IP to 10.10.50.10/24. Gateway 10.10.50.1. DNS 10.10.10.30.
 3. Disable SMB1. Prefer SMB3 or NFSv4 only.
 4. Disable UPnP and DLNA unless required.
 5. Optional. Use MTU 9000 only if every hop and endpoint supports it. Otherwise keep 1500.
@@ -743,14 +755,14 @@ If any one item is not 9000, keep everything at 1500 to avoid path MTU issues.
 
 
 Validation for storage
-1. From VLAN 20 map \\nas01.home.arpa\share and confirm access.
+1. From VLAN 20 map `\\nas01.home.arpa\share` and confirm access.
 2. From VLAN 30 mount an NFS export from nas01.home.arpa and confirm access.
 3. From VLAN 40 IoT and VLAN 60 Guest confirm the NAS is not reachable.
 
 
 ---
 
-## Z) Phase 1 validation all offline
+## Section Z – Phase 1 validation all offline
 Basic reachability
 1. From the laptop on port 24 open https://10.10.10.1 and http://10.10.10.2.
 2. From the laptop open http://10.10.10.30/admin.
@@ -766,6 +778,6 @@ Isolation
 
 Snapshots and backups
 1. Download a fresh SwOS backup.
-2. In OPNsense open System then Configuration then Backups and save a local copy.
+2. In OPNsense open System → Configuration then Backups and save a local copy.
 
 Now ready for Phase 2.
