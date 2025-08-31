@@ -22,7 +22,7 @@ nav:
       - Phase 1:
           On-Premise Infrastructure Setup: phases/1-onprem-bootstrap.md
       - Phase 2:
-          Network Design and Security: phases/2-network-security.md
+          Core Services: phases/2-core-services.md
       - Phase 3:
           Cloud Foundations: phases/3-cloud-foundations.md
       - Phase 4:
