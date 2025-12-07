@@ -4,7 +4,7 @@ This guide walks you through a full offline-first setup of MkDocs with Material 
 
 ---
 
-## 🚀 Installation Steps (Ubuntu/Debian)
+## Installation Steps (Ubuntu/Debian)
 
 1. **Install Python, pip, and virtualenv**:
 
@@ -30,7 +30,7 @@ pip install mkdocs-material
 
 ---
 
-## 📁 Recommended Project Structure
+## Project Structure
 
 ```
 my-docs/
@@ -50,7 +50,7 @@ my-docs/
 
 ---
 
-## ⚙️ MkDocs + Material Setup
+## MkDocs + Material Setup
 
 Edit `mkdocs.yml`:
 
@@ -79,7 +79,7 @@ nav:
 
 ---
 
-## 🎨 Custom Theme with CSS (Optional)
+## Custom Theme with CSS (Optional)
 
 Place this in `docs/assets/css/custom.css`:
 
@@ -111,7 +111,7 @@ body {
 
 ---
 
-## 🧪 Preview the Site Offline
+## Preview the Site Offline
 
 Run locally with hot reload:
 
@@ -123,7 +123,7 @@ Visit: [http://127.0.0.1:8000](http://127.0.0.1:8000)
 
 ---
 
-## 🏗 Build Static Site (for offline use)
+## Build Static Site (for offline use)
 
 ```bash
 mkdocs build
@@ -139,7 +139,7 @@ tar -czvf my-docs.tar.gz site/
 
 ---
 
-## ☁️ (Optional) Deploy to GitHub Pages
+## (Optional) Deploy to GitHub Pages
 
 If you want to deploy later:
 
@@ -158,7 +158,7 @@ mkdocs gh-deploy
 
 ---
 
-## ✅ Final Notes
+## Some Notes
 - You do **not** need to be online to preview, build, or browse the final output.
 - Store and distribute the `site/` folder to share it.
 - Use this guide for reproducible setups on air-gapped or legacy systems.
